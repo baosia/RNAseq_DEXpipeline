@@ -1,0 +1,83 @@
+#Load libraries
+library(tidyverse)
+library(DESeq2)
+library(ggplot2)
+library(org.Mm.eg.db)
+library(clusterProfiler)
+
+#Specify path to working directory
+setwd("C:/Users/PATH/TO/WD/")
+getwd()
+
+#Load in data for RNAseq analysis with DESeq2
+countData <- read.csv("GeneCounts.csv")
+
+#Check headers using head command
+head(countData)
+
+#Load in meta data about experiment (see DESeq2 documentation for how to set this up)
+metaData <- read.csv("metaData.csv")
+
+#Check meta data
+head(metaData)
+
+#Load count and meta data into DESeq object
+dds <- DESeqDataSetFromMatrix(countData=countData,
+				colData=metaData,
+				design=~dex, tidy = TRUE)
+
+#Design specifies how the counts from each gene depend on our variables in the metadata
+#For this dataset the factor we care about is our treatment status (dex)
+#tidy=TRUE argument, which tells DESeq2 to output the results table with rownames as a first #column called 'row.
+
+#see what this object looks like
+dds
+
+#Run DESeq on the object
+dds <- DESeq(dds)
+
+#Optional, check that the dispersion plots show that our data fits the model
+plotDispEsts(dds)
+
+#assemble results
+res <- results(dds)
+head(results(dds, tidy=TRUE))
+
+#Get summaries
+summary(res)
+
+#Rank data by "padj" (adjusted p-value) column
+res <- res[order(res$padj),]
+head(res)
+
+#res now has all our applicable data. Next we want to convert ensembl IDs to gene names.
+#First, need to remove transcript IDs from the ensembl IDs (numbers after "." symbol). 
+#Add new column "ensID" and populate with rownames column, but remove all characters after "." using sub 
+res2 <- as.data.frame(res)
+res2$ensID <- sub("\\..*", "", rownames(res))
+res2 <- res2 %>% relocate(ensID)
+
+#Add gene symbols to results
+res2$gene_symbol <- mapIds(org.Mm.eg.db, keys = res2$ensID, column = 'SYMBOL', keytype = 'ENSEMBL')
+res2 <- res2 %>% relocate(gene_symbol, .after=ensID)
+head(res2)
+
+#Good idea to save this dataframe as a csv for others to view:
+write.csv(res2,"DESeq.csv", row.names = TRUE)
+
+#####
+
+#Some useful plots of the results:
+
+#To plot any set of differential expression data by gene:
+par(mfrow=c(1,1))
+plotCounts(dds, gene="ENSMUSG00000032498.10", intgroup="dex")
+
+# Make a basic volcano plot with log2FoldChange and padj data:
+#reset par
+par(mfrow=c(1,1))
+with(res2, plot(log2FoldChange, -log10(pvalue), pch=20, main="Volcano plot", xlim=c(-9,9)))
+
+# Add colored points: blue if padj<0.01, red if log2FC>2 and padj<0.01)
+with(subset(res2, padj<.01 ), points(log2FoldChange, -log10(pvalue), pch=20, col="blue"))
+with(subset(res2, padj<.01 & abs(log2FoldChange)>2), points(log2FoldChange, -log10(pvalue), pch=20, col="red"))
