@@ -1,0 +1,22 @@
+Index.sh
+#!/bin/bash
+#SBATCH --job-name=mlh1STARindex.sh
+#SBATCH -n 1
+#SBATCH -N 1-1
+#SBATCH -p all          #partition name
+#SBATCH -c 12           #number of cores requested, must be greater or equal to the number needed for the job
+#SBATCH --mem=64G               #memory
+#SBATCH -t 0-2:00               #Hours:minutes runlimit after which the job will be killed
+#SBATCH -o %j.out               #std out file
+#SBATCH -e %j.err               #std err file
+
+module load Python/3.6.5
+module load FastQC
+module load STAR
+
+STAR --runThreadN 12 \
+--runMode genomeGenerate \
+--genomeDir mm39_index \
+--genomeFastaFiles /PATHTO/GencodeM36/GRCm39.primary_assembly.genome.fa \
+--sjdbGTFfile /PATHTO/GencodeM36/gencode.vM36.primary_assembly.annotation.gtf \
+--sjdbOverhang 149
