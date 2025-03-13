@@ -1,0 +1,37 @@
+#!/bin/bash
+#SBATCH --job-name=mlh1STARmap.sh
+#SBATCH -n 1
+#SBATCH -N 1-1
+#SBATCH -p all          #partition name
+#SBATCH -c 12           #number of cores requested, must be greater or equal to the number needed for the job
+#SBATCH --mem=128G              #memory
+#SBATCH -t 2-00         #days-hours:minutes runlimit after which the job will be killed
+#SBATCH -o %j.out               #std out file
+#SBATCH -e %j.err               #std err file
+
+module load Python/3.6.5
+module load FastQC
+module load STAR/2.7.9a
+
+cd PATHTO/data/fastq_files
+mkdir alignment_output
+#Should also have trimmed fastq files in their own directory named "trimmedFQ"
+
+declare -a sample=("R1" "R2" "R3")
+
+for id in ${sample[@]}; do
+        trim1=trimmedFQ/OUTFILE${id}_1.fastq.gz
+        trim2=trimmedFQ/OUTFILE${id}_2.fastq.gz
+        out=alignment_output/${id}_
+        #echo "working on sample ${id}"
+
+        #Map paired-end reads to reference after any pre-processing steps (e.g., FASTQC).
+        STAR --runThreadN 12 \
+        --readFilesCommand zcat \
+        --readFilesIn $trim1 $trim2 \
+        --genomeDir /home/bosia/RNAseq/mm39_index \
+        --outSAMtype BAM SortedByCoordinate \
+        --outFileNamePrefix $out \
+        --outSAMunmapped Within \
+        --quantMode TranscriptomeSAM GeneCounts
+done
