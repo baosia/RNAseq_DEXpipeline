@@ -21,3 +21,6 @@ $Following commands are for paired-end sequencing data
 cutadapt -j 12 -a AGATCGGAAGAG -A AGATCGGAAGAG –m 50 -o OUTFILE_R1_1.fastq.gz -p OUTFILE_R1_2.fastq.gz INFILE1-1.fastq.gz INFILE1-2.fastq.gz
 cutadapt -j 12 -a AGATCGGAAGAG -A AGATCGGAAGAG –m 50 -o OUTFILE_R2_1.fastq.gz -p OUTFILE_R2_2.fastq.gz INFILE2-1.fastq.gz INFILE2-2.fastq.gz
 cutadapt -j 12 -a AGATCGGAAGAG -A AGATCGGAAGAG –m 50 -o OUTFILE_R3_1.fastq.gz -p OUTFILE_R3_2.fastq.gz INFILE3-1.fastq.gz INFILE3-2.fastq.gz
+
+mkdir trimmedFQ
+mv *OUTFILE* trimmedFQ/
