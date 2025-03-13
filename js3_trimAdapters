@@ -1,0 +1,23 @@
+#!/bin/bash
+#SBATCH --job-name=mlh1STARmap.sh
+#SBATCH -n 1
+#SBATCH -N 1-1
+#SBATCH -p all          #partition name
+#SBATCH -c 12           #number of cores requested, must be greater or equal to the number needed for the job
+#SBATCH --mem=16G               #memory
+#SBATCH -t 0-2:00               #Hours:minutes runlimit after which the job will be killed
+#SBATCH -o %j.out               #std out file
+#SBATCH -e %j.err               #std err file
+
+module load Python/3.6.5
+module load cutadapt
+module load pigz
+module load STAR
+
+cd /PATHTO/data/fastq_files/
+
+#Trim adapters using cutadapt (FastQC results showed illumina universal adapter contamination on the 5' ends of both reads files)
+$Following commands are for paired-end sequencing data
+cutadapt -j 12 -a AGATCGGAAGAG -A AGATCGGAAGAG –m 50 -o OUTFILE1-1.fastq.gz -p OUTFILE1-2.fastq.gz INFILE1-1.fastq.gz INFILE1-2.fastq.gz
+cutadapt -j 12 -a AGATCGGAAGAG -A AGATCGGAAGAG –m 50 -o OUTFILE2-1.fastq.gz -p OUTFILE2-2.fastq.gz INFILE2-1.fastq.gz INFILE2-2.fastq.gz
+cutadapt -j 12 -a AGATCGGAAGAG -A AGATCGGAAGAG –m 50 -o OUTFILE3-1.fastq.gz -p OUTFILE3-2.fastq.gz INFILE3-1.fastq.gz INFILE3-2.fastq.gz
