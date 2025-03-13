@@ -29,7 +29,7 @@ for id in ${sample[@]}; do
         STAR --runThreadN 12 \
         --readFilesCommand zcat \
         --readFilesIn $trim1 $trim2 \
-        --genomeDir /home/bosia/RNAseq/mm39_index \
+        --genomeDir /PATHTO/RNAseq/mm39_index \
         --outSAMtype BAM SortedByCoordinate \
         --outFileNamePrefix $out \
         --outSAMunmapped Within \
