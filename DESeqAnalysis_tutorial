@@ -81,3 +81,71 @@ with(res2, plot(log2FoldChange, -log10(pvalue), pch=20, main="Volcano plot", xli
 # Add colored points: blue if padj<0.01, red if log2FC>2 and padj<0.01)
 with(subset(res2, padj<.01 ), points(log2FoldChange, -log10(pvalue), pch=20, col="blue"))
 with(subset(res2, padj<.01 & abs(log2FoldChange)>2), points(log2FoldChange, -log10(pvalue), pch=20, col="red"))
+
+###########################################################
+
+#Move on to GSEA/GO analysis
+
+#Filter results into new data frames for significantly increased and decreased expression.
+res2 <- read.csv("DESeq.csv")
+res2inc <- filter(res2, log2FoldChange > 2 & padj < 0.01)
+res2dec <- filter(res2, log2FoldChange < -2 & padj < 0.01)
+write.csv(res2inc, "KOvWTinc.csv", row.names = TRUE)
+write.csv(res2dec, "KOvWTdec.csv", row.names = TRUE)
+
+gseainc <- enrichGO(res2inc$ensID, OrgDb = org.Mm.eg.db, keyType = "ENSEMBL", ont = "ALL", minGSSize = 2)
+gseadec <- enrichGO(res2dec$ensID, OrgDb = org.Mm.eg.db, keyType = "ENSEMBL", ont = "ALL", minGSSize = 2)
+
+#then you can make a simplified view
+gseainc <- simplify(gseainc)
+gseadec <- simplify(gseadec)
+
+#extract the data from gsea in a nice table.
+gseainc_df <- as.data.frame(gseainc)
+gseadec_df <- as.data.frame(gseadec)
+
+#sort results by adjusted p-value
+gseainc_df <- gseainc_df[order(gseainc_df$p.adjust),]
+gseadec_df <- gseadec_df[order(gseadec_df$p.adjust),]  
+
+#Write results to csv. 
+write.csv(gseainc_df,"Enrichment/GOincKOvWT.csv", row.names = TRUE)
+write.csv(gseadec_df,"Enrichment/GOdecKOvWT.csv", row.names = TRUE)
+
+#and finally to see a nice dot plot for example for the top categories: 
+#Get top 15 GO terms from dataframe sorted by adjusted p-value:
+library(tidyverse)
+gseainc_df2 <- head(gseainc_df,15)
+#Plot using ggplot:
+pinc <- ggplot(gseainc_df2, aes(GeneRatio, fct_rev(fct_reorder(Description, p.adjust)))) +
+    geom_point(aes(size = Count, color = p.adjust)) +
+    scale_colour_gradient(limits=c(0, max(gseainc_df$p.adjust)), high="blue",low="red") +
+    theme_bw() +
+    theme(axis.title = element_blank())
+pinc
+
+#For decreased expression: 
+gseadec_df2 <- head(gseadec_df,15)
+#Plot using ggplot:
+pdec <- ggplot(gseadec_df2, aes(GeneRatio, fct_rev(fct_reorder(Description, p.adjust)))) +
+    geom_point(aes(size = Count, color = p.adjust)) +
+    scale_colour_gradient(limits=c(0, max(gseadec_df$p.adjust)), high="blue",low="red") +
+    theme_bw() +
+    theme(axis.title = element_blank())
+pdec
+
+#####
+
+#to make GO tables that show gene lists instead of ENSEMBL ID's (but can't be simplified):
+
+gseainc_gene <- enrichGO(res2inc$gene_symbol, OrgDb = org.Mm.eg.db, keyType = "SYMBOL", ont = "ALL", minGSSize = 2)
+gseainc_gene <- simplify(gseainc_gene)
+gseainc_gene_df <- as.data.frame(gseainc_gene)
+gseainc_gene_df <- gseainc_gene_df[order(gseainc_gene_df$p.adjust),]  
+write.csv(gseainc_gene_df,"Enrichment/geneGOincKOvWT.csv", row.names = TRUE)
+
+gseadec_gene <- enrichGO(res2dec$gene_symbol, OrgDb = org.Mm.eg.db, keyType = "SYMBOL", ont = "ALL", minGSSize = 2)
+gseadec_gene <- simplify(gseadec_gene)
+gseadec_gene_df <- as.data.frame(gseadec_gene)
+gseadec_gene_df <- gseadec_gene_df[order(gseadec_gene_df$p.adjust),]  
+write.csv(gseadec_gene_df,"Enrichment/geneGOdecKOvWT.csv", row.names = TRUE)
